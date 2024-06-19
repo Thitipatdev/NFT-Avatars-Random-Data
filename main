@@ -1,0 +1,83 @@
+import os
+import random
+from PIL import Image
+import pandas as pd
+from itertools import product
+
+# Directory paths
+base_path = "path_to_your_layers"  # ปรับเส้นทางให้ตรงกับโฟลเดอร์ของคุณ
+output_image_path = "generated_avatars"
+os.makedirs(output_image_path, exist_ok=True)
+
+# Layers and their directories
+layers = {
+    "hair": "hair",
+    "face": "face",
+    "body": "body",
+    "weapon": "weapons",
+    "accessory": "accessories",
+    "extra": "extras"
+}
+
+# Properties and their possible values
+hair_colors = os.listdir(os.path.join(base_path, "hair"))
+face_patterns = os.listdir(os.path.join(base_path, "face"))
+body_types = os.listdir(os.path.join(base_path, "body"))
+
+weapons = os.listdir(os.path.join(base_path, "weapons"))
+accessories = os.listdir(os.path.join(base_path, "accessories"))
+extras = os.listdir(os.path.join(base_path, "extras"))
+
+# Generate all possible combinations
+combinations = list(product(hair_colors, face_patterns, body_types,
+                            weapons, accessories, extras))
+
+# Check if combinations meet the requirement of 10,000
+assert len(combinations) >= 10000, "Not enough combinations to generate 10,000 unique avatars."
+
+# Randomly shuffle combinations
+random.shuffle(combinations)
+
+# Select the first 10,000 combinations
+selected_combinations = combinations[:10000]
+
+# Prepare a DataFrame to store properties
+columns = ["ID", "Hair", "Face", "Body", "Weapon", "Accessory", "Extra"]
+df = pd.DataFrame(columns=columns)
+
+# Generate avatars
+for idx, comb in enumerate(selected_combinations):
+    hair, face, body, weapon, accessory, extra = comb
+    avatar_id = f"{idx:04d}"
+    
+    # Load layers
+    hair_img = Image.open(os.path.join(base_path, layers["hair"], hair)).convert("RGBA")
+    face_img = Image.open(os.path.join(base_path, layers["face"], face)).convert("RGBA")
+    body_img = Image.open(os.path.join(base_path, layers["body"], body)).convert("RGBA")
+    weapon_img = Image.open(os.path.join(base_path, layers["weapon"], weapon)).convert("RGBA")
+    accessory_img = Image.open(os.path.join(base_path, layers["accessory"], accessory)).convert("RGBA")
+    extra_img = Image.open(os.path.join(base_path, layers["extra"], extra)).convert("RGBA")
+    
+    # Create a new image by combining layers
+    avatar = Image.alpha_composite(body_img, face_img)
+    avatar = Image.alpha_composite(avatar, hair_img)
+    avatar = Image.alpha_composite(avatar, weapon_img)
+    avatar = Image.alpha_composite(avatar, accessory_img)
+    avatar = Image.alpha_composite(avatar, extra_img)
+    
+    # Save the image
+    avatar.save(os.path.join(output_image_path, f"{avatar_id}.png"))
+    
+    # Store properties
+    df = df.append({
+        "ID": avatar_id,
+        "Hair": hair,
+        "Face": face,
+        "Body": body,
+        "Weapon": weapon,
+        "Accessory": accessory,
+        "Extra": extra
+    }, ignore_index=True)
+
+# Save properties to Excel
+df.to_excel("avatar_properties.xlsx", index=False)
