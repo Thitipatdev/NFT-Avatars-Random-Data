@@ -1,0 +1,31 @@
+// ติดตั้ง OpenSea SDK OpenSea SDK: ไลบรารี JavaScript สำหรับการทำงานกับ OpenSea API
+npm install opensea-js
+
+// ตัวอย่างโค้ดการสร้างและอัปโหลด NFT
+const { OpenSeaPort, Network } = require('opensea-js');
+const { MnemonicWalletSubprovider } = require('@0x/subproviders');
+const { RPCSubprovider, Web3ProviderEngine } = require('0x.js');
+const Mnemonic = 'your_mnemonic'; // ใส่ Mnemonic ของคุณ
+
+const providerEngine = new Web3ProviderEngine();
+providerEngine.addProvider(new MnemonicWalletSubprovider({
+  mnemonic: Mnemonic,
+}));
+providerEngine.addProvider(new RPCSubprovider('https://mainnet.infura.io'));
+
+const seaport = new OpenSeaPort(providerEngine, {
+  networkName: Network.Main
+});
+
+(async () => {
+  const asset = await seaport.createSellOrder({
+    asset: {
+      tokenId: 1,
+      tokenAddress: '0x1234567890abcdef1234567890abcdef12345678', // ใส่ที่อยู่ contract ของคุณ
+    },
+    accountAddress: '0x1234567890abcdef1234567890abcdef12345678', // ใส่ที่อยู่บัญชีของคุณ
+    startAmount: 1.5,
+    expirationTime: Math.round(Date.now() / 1000 + 60 * 60 * 24) // 1 วันจากนี้
+  });
+  console.log('NFT อัปโหลดแล้ว:', asset);
+})();
